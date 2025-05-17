@@ -1,0 +1,52 @@
+import discord
+from discord.ext import commands
+
+# Initialize bot with command prefix
+intents = discord.Intents.default()
+intents.messages = True
+intents.guilds = True
+intents.message_content = True
+bot = commands.Bot(command_prefix='!', intents=intents)
+
+# Event: Bot ready
+@bot.event
+async def on_ready():
+    print(f'Bot connected as {bot.user}')
+
+# Event: Welcome new member
+@bot.event
+async def on_member_join(member):
+    guild = member.guild
+    if guild.system_channel is not None:
+        welcome_message = f"ברוך הבא, {member.mention}! אנחנו שמחים שהצטרפת לשרת שלנו.\nאל תשכח לקרוא את חוקי השרת ולהינות!"
+        await guild.system_channel.send(welcome_message)
+
+# Command: Create ticket
+@bot.command()
+async def ticket(ctx):
+    guild = ctx.guild
+    author = ctx.author
+
+    # Create a private text channel for the ticket
+    overwrites = {
+        guild.default_role: discord.PermissionOverwrite(read_messages=False),
+        author: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+        guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
+    }
+
+    ticket_channel = await guild.create_text_channel(name=f"ticket-{author.name}", overwrites=overwrites, category=None)
+    await ticket_channel.send(f"שלום {author.mention}, זהו ערוץ הטיקט שלך. צוות השרת יעזור לך בקרוב.")
+
+# Command: Close ticket
+@bot.command()
+async def close(ctx):
+    if ctx.channel.name.startswith('ticket-'):
+        await ctx.send("הטיקט יסגר בעוד 5 שניות...")
+        await asyncio.sleep(5)
+        await ctx.channel.delete()
+    else:
+        await ctx.send("הפקודה הזו יכולה לעבוד רק בתוך ערוץ טיקט.")
+
+# Run bot
+TOKEN = MTM3MzM0NzA0MTU3NjYxNjAwNg.GiTW-S.RCdtaI-f643SguNkjsYQzwQEH4gPRl7Tdy8dAU
+bot.run(TOKEN)
